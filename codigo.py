@@ -148,10 +148,10 @@ class Stats:
 class SimulationConfig:
     """Parámetros configurables de la simulación."""
 
-    clients: int = 120
-    workers: int = 5
-    payment_slots: int = 3
-    max_quantity: int = 3
+    clients: int = 1200
+    workers: int = 12
+    payment_slots: int = 5
+    max_quantity: int = 2
     unsafe: bool = False
     seed: Optional[int] = 7
     live: bool = True
@@ -166,15 +166,15 @@ class SimulationConfig:
 def build_products() -> Dict[str, Product]:
     """Crea el catálogo inicial de productos."""
     products = [
-        Product("PlayStation 5", 499.99, 14, 0.18, "🎮"),
-        Product("iPhone 16", 959.00, 9, 0.16, "📱"),
-        Product("AirPods Pro", 249.00, 24, 0.15, "🎧"),
-        Product("Nintendo Switch", 319.99, 18, 0.13, "🕹️"),
-        Product("MacBook Air", 1199.00, 7, 0.10, "💻"),
-        Product("Smart TV 55", 649.00, 11, 0.10, "📺"),
-        Product("Kindle", 129.99, 22, 0.08, "📚"),
-        Product("Robot Aspirador", 279.99, 15, 0.06, "🤖"),
-        Product("Cafetera Deluxe", 189.99, 16, 0.04, "☕"),
+        Product("PlayStation 5", 499.99, 140, 0.18, "🎮"),
+        Product("iPhone 16", 959.00, 90, 0.16, "📱"),
+        Product("AirPods Pro", 249.00, 240, 0.15, "🎧"),
+        Product("Nintendo Switch", 319.99, 180, 0.13, "🕹️"),
+        Product("MacBook Air", 1199.00, 70, 0.10, "💻"),
+        Product("Smart TV 55", 649.00, 110, 0.10, "📺"),
+        Product("Kindle", 129.99, 220, 0.08, "📚"),
+        Product("Robot Aspirador", 279.99, 150, 0.06, "🤖"),
+        Product("Cafetera Deluxe", 189.99, 160, 0.04, "☕"),
     ]
     return {product.name: product for product in products}
 
@@ -981,10 +981,10 @@ def parse_args() -> SimulationConfig:
     parser = argparse.ArgumentParser(
         description="Simulador concurrente de una tienda online durante Black Friday."
     )
-    parser.add_argument("--clients", type=int, default=120, help="Número de clientes/pedidos simulados.")
-    parser.add_argument("--workers", type=int, default=5, help="Número de servidores que procesan pedidos.")
-    parser.add_argument("--payment-slots", type=int, default=3, help="Pagos simultáneos permitidos.")
-    parser.add_argument("--max-quantity", type=int, default=3, help="Cantidad máxima por pedido.")
+    parser.add_argument("--clients", type=int, default=1200, help="Número de clientes/pedidos simulados.")
+    parser.add_argument("--workers", type=int, default=12, help="Número de servidores que procesan pedidos.")
+    parser.add_argument("--payment-slots", type=int, default=5, help="Pagos simultáneos permitidos.")
+    parser.add_argument("--max-quantity", type=int, default=2, help="Cantidad máxima por pedido.")
     parser.add_argument("--unsafe", action="store_true", help="Ejecuta la versión concurrente sin Lock de stock.")
     parser.add_argument("--no-live", action="store_true", help="Desactiva el panel visual en directo.")
     parser.add_argument("--seed", type=int, default=7, help="Semilla aleatoria para resultados reproducibles.")
