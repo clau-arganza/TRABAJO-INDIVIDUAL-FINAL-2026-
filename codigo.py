@@ -9,9 +9,14 @@ Simula una tienda online durante Black Friday usando concurrencia real:
 - Locks: protegen el stock y las estadísticas compartidas.
 - Semaphore: limita los pagos simultáneos, como una pasarela de pago real.
 - Event: coordina el cierre del sistema cuando ya no quedan pedidos.
-- Queue: comunica clientes y servidores.
+- Queue/PriorityQueue: comunica clientes y servidores y da prioridad a clientes VIP.
 - Comparación secuencial vs concurrente.
 - Generación automática de un informe visual en HTML con gráficos SVG.
+
+Mejoras añadidas:
+- Tipos de cliente: normal, VIP y bot/reventa.
+- Detector básico de bots para bloquear pedidos sospechosos.
+- Ranking visual de productos más vendidos, más rentables y agotados.
 
 Solo usa bibliotecas estándar de Python.
 """
@@ -39,6 +44,27 @@ from typing import Dict, List, Optional, Tuple
 
 SHOP_NAME = "CLICK&RUN BLACK FRIDAY"
 DEFAULT_OUTPUT_DIR = "output_black_friday"
+
+CLIENT_TYPES = {
+    "VIP": {
+        "label": "Cliente VIP",
+        "icon": "⭐",
+        "priority": 0,
+        "probability": 0.13,
+    },
+    "NORMAL": {
+        "label": "Cliente normal",
+        "icon": "👤",
+        "priority": 1,
+        "probability": 0.82,
+    },
+    "BOT": {
+        "label": "Bot/reventa",
+        "icon": "🤖",
+        "priority": 2,
+        "probability": 0.05,
+    },
+}
 
 
 @dataclass
@@ -98,6 +124,8 @@ class Order:
 
     order_id: int
     client_id: int
+    client_type: str
+    priority: int
     product_name: str
     quantity: int
     created_at: float
@@ -109,6 +137,7 @@ class OrderResult:
 
     order_id: int
     client_id: int
+    client_type: str
     product_name: str
     quantity: int
     status: str
@@ -126,20 +155,35 @@ class Stats:
     accepted: int = 0
     rejected: int = 0
     failed_payments: int = 0
+    bot_blocked: int = 0
     revenue: float = 0.0
     processed: int = 0
     results: List[OrderResult] = field(default_factory=list)
+    client_type_counts: Dict[str, int] = field(
+        default_factory=lambda: {client_type: 0 for client_type in CLIENT_TYPES}
+    )
+    client_type_accepted: Dict[str, int] = field(
+        default_factory=lambda: {client_type: 0 for client_type in CLIENT_TYPES}
+    )
     lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
 
     def add_result(self, result: OrderResult) -> None:
         with self.lock:
             self.processed += 1
             self.results.append(result)
+
+            if result.client_type in self.client_type_counts:
+                self.client_type_counts[result.client_type] += 1
+
             if result.status == "ACCEPTED":
                 self.accepted += 1
                 self.revenue += result.revenue
+                if result.client_type in self.client_type_accepted:
+                    self.client_type_accepted[result.client_type] += 1
             elif result.status == "PAYMENT_ERROR":
                 self.failed_payments += 1
+            elif result.status == "BOT_BLOCKED":
+                self.bot_blocked += 1
             else:
                 self.rejected += 1
 
@@ -197,6 +241,7 @@ def pseudo_delay(seed: int, low: float, high: float) -> float:
     value = ((seed * 1103515245 + 12345) % 10_000) / 10_000
     return low + (high - low) * value
 
+
 def payment_is_successful(order_id: int) -> bool:
     """Simula un fallo de pago determinista de aproximadamente el 4 %."""
     return ((order_id * 37 + 13) % 100) >= 4
@@ -216,7 +261,7 @@ def shop_banner() -> str:
 ║                  CLICK&RUN BLACK FRIDAY                   ║
 ║                                                            ║
 ║       🛒  clientes masivos  →  cola  →  servidores  ⚙️      ║
-║              stock limitado + pagos simultáneos           ║
+║        VIP + bots + stock limitado + pagos simultáneos     ║
 ╚════════════════════════════════════════════════════════════╝
 """
 
@@ -231,6 +276,8 @@ def print_catalog(products: Dict[str, Product]) -> None:
             f"{product.icon} {product.name:<21} {money(product.price):>12} "
             f"{product.stock:>8} {product.popularity:>13.0%}"
         )
+    print("-" * 72)
+    print("Tipos de cliente simulados: 👤 normal | ⭐ VIP con prioridad | 🤖 bot/reventa")
     print("-" * 72)
 
 
@@ -248,14 +295,25 @@ def print_live_dashboard(
         accepted = stats.accepted
         rejected = stats.rejected
         failed = stats.failed_payments
+        bots = stats.bot_blocked
         revenue = stats.revenue
+        client_counts = dict(stats.client_type_counts)
 
     clear_screen()
     print(shop_banner())
     print(f"Modo: {mode_name}")
     print(f"Tiempo transcurrido: {elapsed:.2f} s")
     print(f"Pedidos procesados: {processed}/{total_orders}  {progress_bar(processed, total_orders)}")
-    print(f"Aceptados: {accepted} | Rechazados por stock: {rejected} | Fallos de pago: {failed}")
+    print(
+        f"Aceptados: {accepted} | Rechazados por stock: {rejected} | "
+        f"Fallos de pago: {failed} | Bots bloqueados: {bots}"
+    )
+    print(
+        "Clientes procesados: "
+        f"👤 {client_counts.get('NORMAL', 0)} | "
+        f"⭐ {client_counts.get('VIP', 0)} | "
+        f"🤖 {client_counts.get('BOT', 0)}"
+    )
     print(f"Facturación acumulada: {money(revenue)}")
     print("\nSTOCK EN DIRECTO")
     print("-" * 72)
@@ -274,11 +332,48 @@ def print_live_dashboard(
 # ============================================================
 
 
-def choose_product(products: Dict[str, Product]) -> str:
-    """Elige un producto ponderando por popularidad."""
+def choose_client_type() -> str:
+    """Elige un tipo de cliente: normal, VIP o bot."""
+    types = list(CLIENT_TYPES.keys())
+    weights = [CLIENT_TYPES[client_type]["probability"] for client_type in types]
+    return random.choices(types, weights=weights, k=1)[0]
+
+
+def choose_product(products: Dict[str, Product], client_type: str) -> str:
+    """Elige un producto ponderando por popularidad y tipo de cliente."""
     names = list(products.keys())
-    weights = [products[name].popularity for name in names]
+
+    if client_type == "BOT":
+        # Los bots intentan ir a productos caros y populares para reventa.
+        weights = [
+            products[name].popularity * (1 + products[name].price / 1000)
+            for name in names
+        ]
+    elif client_type == "VIP":
+        # Los VIP tienen una ligera preferencia por productos de mayor valor.
+        weights = [
+            products[name].popularity * (1 + products[name].price / 2500)
+            for name in names
+        ]
+    else:
+        weights = [products[name].popularity for name in names]
+
     return random.choices(names, weights=weights, k=1)[0]
+
+
+def choose_quantity(config: SimulationConfig, client_type: str) -> int:
+    """Decide cuántas unidades pide cada tipo de cliente."""
+    if client_type == "BOT":
+        # Los bots suelen intentar comprar el máximo permitido.
+        if random.random() < 0.75:
+            return config.max_quantity
+    elif client_type == "VIP":
+        # Los VIP normalmente compran una unidad, pero a veces compran dos.
+        if config.max_quantity >= 2 and random.random() < 0.25:
+            return 2
+        return 1
+
+    return random.randint(1, config.max_quantity)
 
 
 def build_orders(config: SimulationConfig, products: Dict[str, Product]) -> List[Order]:
@@ -289,12 +384,15 @@ def build_orders(config: SimulationConfig, products: Dict[str, Product]) -> List
     orders: List[Order] = []
     base_time = time.perf_counter()
     for order_id in range(1, config.clients + 1):
-        product_name = choose_product(products)
-        quantity = random.randint(1, config.max_quantity)
+        client_type = choose_client_type()
+        product_name = choose_product(products, client_type)
+        quantity = choose_quantity(config, client_type)
         orders.append(
             Order(
                 order_id=order_id,
                 client_id=10_000 + order_id,
+                client_type=client_type,
+                priority=int(CLIENT_TYPES[client_type]["priority"]),
                 product_name=product_name,
                 quantity=quantity,
                 created_at=base_time,
@@ -304,13 +402,49 @@ def build_orders(config: SimulationConfig, products: Dict[str, Product]) -> List
 
 
 # ============================================================
+# DETECTOR DE BOTS
+# ============================================================
+
+
+def is_suspicious_bot(order: Order, product: Product) -> bool:
+    """
+    Detector básico de bots.
+
+    La idea no es hacer ciberseguridad real, sino simular una regla de negocio:
+    en Black Friday algunos pedidos automatizados intentan comprar muchas unidades
+    de productos caros o muy demandados para reventa.
+
+    Se bloquea un pedido cuando acumula suficientes señales sospechosas.
+    """
+    if order.client_type != "BOT":
+        return False
+
+    score = 0
+
+    if order.quantity >= 2:
+        score += 2
+    if product.price >= 450:
+        score += 1
+    if product.popularity >= 0.12:
+        score += 1
+    if order.order_id % 3 != 0:
+        # Simula que algunos bots llegan con patrones repetitivos detectables.
+        score += 1
+
+    return score >= 3
+
+
+# ============================================================
 # SIMULACIÓN CONCURRENTE
 # ============================================================
 
 
+QueueItem = Tuple[int, int, Optional[Order]]
+
+
 def client_producer(
     client_orders: List[Order],
-    order_queue: "queue.Queue[Order]",
+    order_queue: "queue.PriorityQueue[QueueItem]",
     producer_done_counter: List[int],
     producer_lock: threading.Lock,
     producers_done_event: threading.Event,
@@ -320,13 +454,13 @@ def client_producer(
     Productor: mete pedidos en la cola.
 
     Hay varios productores para simular que muchos clientes llegan a la tienda
-    online al mismo tiempo.
+    online al mismo tiempo. Se usa PriorityQueue para que los VIP tengan prioridad.
     """
     for order in client_orders:
         # Pequeño retardo para simular clientes entrando en momentos ligeramente distintos.
         time.sleep(pseudo_delay(order.order_id, 0.002, 0.012))
         order.created_at = time.perf_counter()
-        order_queue.put(order)
+        order_queue.put((order.priority, order.order_id, order))
 
     with producer_lock:
         producer_done_counter[0] += 1
@@ -349,7 +483,7 @@ def payment_gateway(payment_slots: threading.Semaphore, order_id: int) -> bool:
 def worker_consumer(
     worker_id: int,
     products: Dict[str, Product],
-    order_queue: "queue.Queue[Optional[Order]]",
+    order_queue: "queue.PriorityQueue[QueueItem]",
     stats: Stats,
     payment_slots: threading.Semaphore,
     unsafe: bool,
@@ -357,19 +491,38 @@ def worker_consumer(
     """
     Consumidor: saca pedidos de la cola y los procesa.
 
-    El trabajador termina cuando recibe un valor None. Este patrón de
+    El trabajador termina cuando recibe una orden None. Este patrón de
     "sentinela" evita dejar hebras esperando indefinidamente.
     """
     worker_name = f"Servidor-{worker_id}"
 
     while True:
-        order = order_queue.get()
+        _, _, order = order_queue.get()
         if order is None:
             order_queue.task_done()
             break
 
         start_processing = time.perf_counter()
         product = products[order.product_name]
+
+        if is_suspicious_bot(order, product):
+            time.sleep(pseudo_delay(order.order_id, 0.001, 0.004))
+            result = OrderResult(
+                order_id=order.order_id,
+                client_id=order.client_id,
+                client_type=order.client_type,
+                product_name=order.product_name,
+                quantity=order.quantity,
+                status="BOT_BLOCKED",
+                revenue=0.0,
+                waiting_time=start_processing - order.created_at,
+                processing_time=time.perf_counter() - start_processing,
+                worker_name=worker_name,
+                message="Pedido bloqueado por actividad sospechosa de bot/reventa.",
+            )
+            stats.add_result(result)
+            order_queue.task_done()
+            continue
 
         if unsafe:
             bought = product.try_buy_unsafe(order.quantity)
@@ -380,6 +533,7 @@ def worker_consumer(
             result = OrderResult(
                 order_id=order.order_id,
                 client_id=order.client_id,
+                client_type=order.client_type,
                 product_name=order.product_name,
                 quantity=order.quantity,
                 status="NO_STOCK",
@@ -395,6 +549,7 @@ def worker_consumer(
                 result = OrderResult(
                     order_id=order.order_id,
                     client_id=order.client_id,
+                    client_type=order.client_type,
                     product_name=order.product_name,
                     quantity=order.quantity,
                     status="ACCEPTED",
@@ -412,6 +567,7 @@ def worker_consumer(
                 result = OrderResult(
                     order_id=order.order_id,
                     client_id=order.client_id,
+                    client_type=order.client_type,
                     product_name=order.product_name,
                     quantity=order.quantity,
                     status="PAYMENT_ERROR",
@@ -433,7 +589,7 @@ def run_concurrent_simulation(
 ) -> Tuple[Stats, float]:
     """Ejecuta la simulación concurrente."""
     stats = Stats()
-    order_queue: "queue.Queue[Optional[Order]]" = queue.Queue()
+    order_queue: "queue.PriorityQueue[QueueItem]" = queue.PriorityQueue()
     payment_slots = threading.Semaphore(config.payment_slots)
     producers_done_event = threading.Event()
 
@@ -502,7 +658,7 @@ def run_concurrent_simulation(
 
     # Enviamos una señal de parada a cada servidor.
     for _ in workers:
-        order_queue.put(None)
+        order_queue.put((9999, 9999, None))
 
     # Esperamos a que los servidores lean su señal de parada.
     for thread in workers:
@@ -513,7 +669,6 @@ def run_concurrent_simulation(
         mode_name = "CONCURRENTE SIN LOCK" if config.unsafe else "CONCURRENTE SEGURA"
         print_live_dashboard(stats, products, len(orders), start, mode_name)
     return stats, elapsed
-
 
 
 # ============================================================
@@ -529,10 +684,29 @@ def run_sequential_simulation(
     stats = Stats()
     start = time.perf_counter()
 
-    for order in orders:
+    # Se ordena por prioridad para aplicar la misma lógica de negocio que en PriorityQueue.
+    for order in sorted(orders, key=lambda item: (item.priority, item.order_id)):
         order.created_at = time.perf_counter()
         start_processing = time.perf_counter()
         product = products[order.product_name]
+
+        if is_suspicious_bot(order, product):
+            time.sleep(pseudo_delay(order.order_id, 0.001, 0.004))
+            result = OrderResult(
+                order_id=order.order_id,
+                client_id=order.client_id,
+                client_type=order.client_type,
+                product_name=order.product_name,
+                quantity=order.quantity,
+                status="BOT_BLOCKED",
+                revenue=0.0,
+                waiting_time=0.0,
+                processing_time=time.perf_counter() - start_processing,
+                worker_name="Secuencial",
+                message="Pedido bloqueado por actividad sospechosa de bot/reventa.",
+            )
+            stats.add_result(result)
+            continue
 
         # En secuencial no hace falta Lock porque solo hay un flujo de ejecución.
         if product.stock >= order.quantity:
@@ -545,6 +719,7 @@ def run_sequential_simulation(
                 result = OrderResult(
                     order_id=order.order_id,
                     client_id=order.client_id,
+                    client_type=order.client_type,
                     product_name=order.product_name,
                     quantity=order.quantity,
                     status="ACCEPTED",
@@ -560,6 +735,7 @@ def run_sequential_simulation(
                 result = OrderResult(
                     order_id=order.order_id,
                     client_id=order.client_id,
+                    client_type=order.client_type,
                     product_name=order.product_name,
                     quantity=order.quantity,
                     status="PAYMENT_ERROR",
@@ -573,6 +749,7 @@ def run_sequential_simulation(
             result = OrderResult(
                 order_id=order.order_id,
                 client_id=order.client_id,
+                client_type=order.client_type,
                 product_name=order.product_name,
                 quantity=order.quantity,
                 status="NO_STOCK",
@@ -639,8 +816,8 @@ def svg_bar_chart(data: List[Tuple[str, float]], title: str, suffix: str = "") -
     """Genera un gráfico de barras SVG sin dependencias externas."""
     width = 920
     row_height = 42
-    margin_left = 220
-    margin_right = 40
+    margin_left = 240
+    margin_right = 80
     margin_top = 70
     chart_width = width - margin_left - margin_right
     height = margin_top + row_height * len(data) + 40
@@ -673,12 +850,12 @@ def svg_bar_chart(data: List[Tuple[str, float]], title: str, suffix: str = "") -
     '''
 
 
-def svg_donut(accepted: int, rejected: int, failed: int) -> str:
+def svg_donut(accepted: int, rejected: int, failed: int, bot_blocked: int) -> str:
     """Genera un gráfico circular tipo donut con SVG."""
-    total = max(accepted + rejected + failed, 1)
-    values = [accepted, rejected, failed]
-    labels = ["Aceptados", "Sin stock", "Pago fallido"]
-    colors = ["#111827", "#6b7280", "#d1d5db"]
+    total = max(accepted + rejected + failed + bot_blocked, 1)
+    values = [accepted, rejected, failed, bot_blocked]
+    labels = ["Aceptados", "Sin stock", "Pago fallido", "Bots bloqueados"]
+    colors = ["#111827", "#6b7280", "#d1d5db", "#ef4444"]
     radius = 90
     circumference = 2 * math.pi * radius
     offset = 0
@@ -695,7 +872,7 @@ def svg_donut(accepted: int, rejected: int, failed: int) -> str:
 
     legend = []
     for idx, (label, value, color) in enumerate(zip(labels, values, colors)):
-        y = 80 + idx * 36
+        y = 62 + idx * 36
         pct = value / total * 100
         legend.append(
             f'<rect x="300" y="{y - 16}" width="18" height="18" rx="4" fill="{color}" />'
@@ -703,7 +880,7 @@ def svg_donut(accepted: int, rejected: int, failed: int) -> str:
         )
 
     return f'''
-    <svg viewBox="0 0 620 310" role="img" aria-label="Resumen de pedidos">
+    <svg viewBox="0 0 660 310" role="img" aria-label="Resumen de pedidos">
         <style>
             text {{ font-family: Arial, sans-serif; fill: #111827; }}
             .big {{ font-size: 28px; font-weight: 700; }}
@@ -720,16 +897,36 @@ def svg_donut(accepted: int, rejected: int, failed: int) -> str:
 def write_csv(path: Path, results: List[OrderResult]) -> None:
     with path.open("w", encoding="utf-8") as f:
         f.write(
-            "order_id,client_id,product_name,quantity,status,revenue,waiting_time,"
+            "order_id,client_id,client_type,product_name,quantity,status,revenue,waiting_time,"
             "processing_time,worker_name,message\n"
         )
         for r in results:
             safe_message = r.message.replace('"', "'")
             f.write(
-                f'{r.order_id},{r.client_id},"{r.product_name}",{r.quantity},'
+                f'{r.order_id},{r.client_id},{r.client_type},"{r.product_name}",{r.quantity},'
                 f'{r.status},{r.revenue:.2f},{r.waiting_time:.5f},'
                 f'{r.processing_time:.5f},{r.worker_name},"{safe_message}"\n'
             )
+
+
+def product_revenue_ranking(products: Dict[str, Product]) -> List[Tuple[str, float]]:
+    """Calcula ingresos por producto a partir de unidades vendidas y precio."""
+    data = [
+        (f"{product.icon} {product.name}", product.sold * product.price)
+        for product in products.values()
+    ]
+    return sorted(data, key=lambda item: item[1], reverse=True)
+
+
+def product_sold_ranking(products: Dict[str, Product]) -> List[Tuple[str, float]]:
+    """Calcula ranking de unidades vendidas."""
+    data = [(f"{product.icon} {product.name}", product.sold) for product in products.values()]
+    return sorted(data, key=lambda item: item[1], reverse=True)
+
+
+def sold_out_products(products: Dict[str, Product]) -> List[Product]:
+    """Devuelve productos agotados."""
+    return [product for product in products.values() if product.stock <= 0]
 
 
 def generate_report(
@@ -754,11 +951,30 @@ def generate_report(
 
     sold_data = [(f"{p.icon} {p.name}", p.sold) for p in products.values()]
     stock_data = [(f"{p.icon} {p.name}", max(p.stock, 0)) for p in products.values()]
+    top_sold_data = product_sold_ranking(products)[:5]
+    top_revenue_data = product_revenue_ranking(products)[:5]
+    client_data = [
+        (f"{CLIENT_TYPES['NORMAL']['icon']} Normal", concurrent_stats.client_type_counts.get("NORMAL", 0)),
+        (f"{CLIENT_TYPES['VIP']['icon']} VIP", concurrent_stats.client_type_counts.get("VIP", 0)),
+        (f"{CLIENT_TYPES['BOT']['icon']} Bot/reventa", concurrent_stats.client_type_counts.get("BOT", 0)),
+    ]
+
+    accepted_client_rows = "".join(
+        f"""
+        <tr>
+            <td>{CLIENT_TYPES[client_type]["icon"]} {escape(CLIENT_TYPES[client_type]["label"])}</td>
+            <td>{concurrent_stats.client_type_counts.get(client_type, 0)}</td>
+            <td>{concurrent_stats.client_type_accepted.get(client_type, 0)}</td>
+        </tr>
+        """
+        for client_type in ["NORMAL", "VIP", "BOT"]
+    )
 
     recent_rows = "".join(
         f"""
         <tr>
             <td>{r.order_id}</td>
+            <td>{CLIENT_TYPES.get(r.client_type, {}).get("icon", "")} {escape(r.client_type)}</td>
             <td>{escape(r.product_name)}</td>
             <td>{r.quantity}</td>
             <td><span class="badge {escape(r.status.lower())}">{escape(r.status)}</span></td>
@@ -777,9 +993,17 @@ def generate_report(
             <td>{p.initial_stock}</td>
             <td>{p.sold}</td>
             <td>{p.stock}</td>
+            <td>{money(p.sold * p.price)}</td>
         </tr>
         """
         for p in products.values()
+    )
+
+    sold_out_list = sold_out_products(products)
+    sold_out_html = (
+        "<ul>" + "".join(f"<li>{p.icon} {escape(p.name)}</li>" for p in sold_out_list) + "</ul>"
+        if sold_out_list
+        else "<p>No se agotó ningún producto en esta ejecución.</p>"
     )
 
     report_path = output_dir / "informe_visual_black_friday.html"
@@ -824,30 +1048,39 @@ def generate_report(
         .accepted {{ background: #dcfce7; color: #166534; }}
         .no_stock {{ background: #fee2e2; color: #991b1b; }}
         .payment_error {{ background: #fef3c7; color: #92400e; }}
+        .bot_blocked {{ background: #fee2e2; color: #7f1d1d; }}
         .two {{ display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }}
+        .three {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }}
         .note {{ background: #fffbeb; border: 1px solid #fde68a; }}
         code {{ background: #f3f4f6; padding: 2px 5px; border-radius: 6px; }}
         footer {{ color: #6b7280; padding: 20px 0 40px; }}
-        @media (max-width: 900px) {{ .grid, .two {{ grid-template-columns: 1fr; }} }}
+        @media (max-width: 900px) {{ .grid, .two, .three {{ grid-template-columns: 1fr; }} }}
     </style>
 </head>
 <body>
     <header>
         <h1>🛒 Black Friday Simulator</h1>
-        <p>Sistema concurrente de compras, stock y pagos en Python</p>
+        <p>Sistema concurrente de compras, stock, clientes VIP, bots y pagos en Python</p>
     </header>
     <main>
         <section class="grid">
             <div class="card"><div class="label">Pedidos aceptados</div><div class="metric">{concurrent_stats.accepted}</div></div>
-            <div class="card"><div class="label">Pedidos rechazados</div><div class="metric">{concurrent_stats.rejected}</div></div>
-            <div class="card"><div class="label">Facturación</div><div class="metric">{money(concurrent_stats.revenue)}</div></div>
+            <div class="card"><div class="label">Rechazados por stock</div><div class="metric">{concurrent_stats.rejected}</div></div>
+            <div class="card"><div class="label">Bots bloqueados</div><div class="metric">{concurrent_stats.bot_blocked}</div></div>
             <div class="card"><div class="label">Aceleración</div><div class="metric">x{speedup:.2f}</div></div>
+        </section>
+
+        <section class="grid">
+            <div class="card"><div class="label">Facturación</div><div class="metric">{money(concurrent_stats.revenue)}</div></div>
+            <div class="card"><div class="label">Clientes normales</div><div class="metric">{concurrent_stats.client_type_counts.get("NORMAL", 0)}</div></div>
+            <div class="card"><div class="label">Clientes VIP</div><div class="metric">{concurrent_stats.client_type_counts.get("VIP", 0)}</div></div>
+            <div class="card"><div class="label">Bots/reventa</div><div class="metric">{concurrent_stats.client_type_counts.get("BOT", 0)}</div></div>
         </section>
 
         <section class="two">
             <div class="card">
                 <h2>Resumen de pedidos</h2>
-                {svg_donut(concurrent_stats.accepted, concurrent_stats.rejected, concurrent_stats.failed_payments)}
+                {svg_donut(concurrent_stats.accepted, concurrent_stats.rejected, concurrent_stats.failed_payments, concurrent_stats.bot_blocked)}
             </div>
             <div class="card">
                 <h2>Rendimiento</h2>
@@ -860,6 +1093,48 @@ def generate_report(
                 <p>Tiempo máximo de espera en cola: <strong>{max_wait:.4f} s</strong></p>
                 <p>Tiempo medio de procesamiento: <strong>{average_processing:.4f} s</strong></p>
             </div>
+        </section>
+
+        <section class="two">
+            <div class="card">
+                <h2>Tipos de cliente</h2>
+                {svg_bar_chart(client_data, "Pedidos procesados por tipo de cliente")}
+            </div>
+            <div class="card">
+                <h2>Pedidos aceptados por tipo</h2>
+                <table>
+                    <tr><th>Tipo de cliente</th><th>Procesados</th><th>Aceptados</th></tr>
+                    {accepted_client_rows}
+                </table>
+                <p>Los clientes VIP entran con mayor prioridad en la <code>PriorityQueue</code>. Los bots se analizan antes de consumir stock.</p>
+            </div>
+        </section>
+
+        <section class="three">
+            <div class="card">
+                <h2>🏆 Producto más vendido</h2>
+                <p class="metric">{escape(top_sold_data[0][0])}</p>
+                <p>{top_sold_data[0][1]:.0f} unidades vendidas</p>
+            </div>
+            <div class="card">
+                <h2>💰 Producto más rentable</h2>
+                <p class="metric">{escape(top_revenue_data[0][0])}</p>
+                <p>{money(top_revenue_data[0][1])} generados</p>
+            </div>
+            <div class="card">
+                <h2>🚨 Productos agotados</h2>
+                {sold_out_html}
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Ranking de productos más vendidos</h2>
+            {svg_bar_chart(top_sold_data, "Top 5 por unidades vendidas")}
+        </section>
+
+        <section class="card">
+            <h2>Ranking de productos más rentables</h2>
+            {svg_bar_chart(top_revenue_data, "Top 5 por facturación aproximada", " €")}
         </section>
 
         <section class="card">
@@ -881,7 +1156,7 @@ def generate_report(
         <section class="card">
             <h2>Catálogo final</h2>
             <table>
-                <tr><th>Producto</th><th>Precio</th><th>Stock inicial</th><th>Vendido</th><th>Stock final</th></tr>
+                <tr><th>Producto</th><th>Precio</th><th>Stock inicial</th><th>Vendido</th><th>Stock final</th><th>Facturación aprox.</th></tr>
                 {product_rows}
             </table>
         </section>
@@ -889,7 +1164,7 @@ def generate_report(
         <section class="card">
             <h2>Primeros pedidos procesados</h2>
             <table>
-                <tr><th>ID</th><th>Producto</th><th>Cantidad</th><th>Estado</th><th>Importe</th><th>Servidor</th></tr>
+                <tr><th>ID</th><th>Cliente</th><th>Producto</th><th>Cantidad</th><th>Estado</th><th>Importe</th><th>Servidor</th></tr>
                 {recent_rows}
             </table>
             <p>El listado completo está en <code>{csv_path.name}</code>.</p>
@@ -943,6 +1218,30 @@ def clone_products(products: Dict[str, Product]) -> Dict[str, Product]:
     }
 
 
+def print_ranking(products: Dict[str, Product]) -> None:
+    """Imprime rankings principales en terminal."""
+    sold_ranking = product_sold_ranking(products)
+    revenue_ranking = product_revenue_ranking(products)
+    sold_out = sold_out_products(products)
+
+    print("\nRANKING VISUAL")
+    print("-" * 72)
+
+    print("Top 3 productos más vendidos:")
+    for index, (label, units) in enumerate(sold_ranking[:3], start=1):
+        print(f"{index}. {label}: {units:.0f} unidades")
+
+    print("\nTop 3 productos más rentables:")
+    for index, (label, revenue) in enumerate(revenue_ranking[:3], start=1):
+        print(f"{index}. {label}: {money(revenue)}")
+
+    if sold_out:
+        agotados = ", ".join(f"{product.icon} {product.name}" for product in sold_out)
+        print(f"\nProductos agotados: {agotados}")
+    else:
+        print("\nProductos agotados: ninguno")
+
+
 def print_final_summary(
     concurrent_stats: Stats,
     concurrent_time: float,
@@ -950,6 +1249,7 @@ def print_final_summary(
     sequential_time: float,
     report_path: Path,
     config: SimulationConfig,
+    products: Dict[str, Product],
 ) -> None:
     speedup = sequential_time / concurrent_time if concurrent_time > 0 else 0.0
     print("\n" + "=" * 72)
@@ -966,7 +1266,14 @@ def print_final_summary(
     print(f"Pedidos aceptados:    {concurrent_stats.accepted}")
     print(f"Rechazados sin stock: {concurrent_stats.rejected}")
     print(f"Fallos de pago:       {concurrent_stats.failed_payments}")
+    print(f"Bots bloqueados:      {concurrent_stats.bot_blocked}")
     print(f"Facturación final:    {money(concurrent_stats.revenue)}")
+    print("-" * 72)
+    print("Tipos de cliente procesados:")
+    print(f"  👤 Normales: {concurrent_stats.client_type_counts.get('NORMAL', 0)}")
+    print(f"  ⭐ VIP:      {concurrent_stats.client_type_counts.get('VIP', 0)}")
+    print(f"  🤖 Bots:     {concurrent_stats.client_type_counts.get('BOT', 0)}")
+    print_ranking(products)
     print("-" * 72)
     print(f"Informe visual:       {report_path}")
     print("=" * 72)
@@ -997,6 +1304,8 @@ def parse_args() -> SimulationConfig:
         raise ValueError("El número de servidores debe ser mayor que 0.")
     if args.payment_slots < 1:
         raise ValueError("Debe haber al menos una pasarela de pago disponible.")
+    if args.max_quantity < 1:
+        raise ValueError("La cantidad máxima por pedido debe ser mayor que 0.")
 
     return SimulationConfig(
         clients=args.clients,
@@ -1056,6 +1365,7 @@ def main() -> None:
         sequential_time=sequential_time,
         report_path=report_path,
         config=config,
+        products=concurrent_products,
     )
 
 

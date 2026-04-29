@@ -37,40 +37,49 @@
         .accepted { background: #dcfce7; color: #166534; }
         .no_stock { background: #fee2e2; color: #991b1b; }
         .payment_error { background: #fef3c7; color: #92400e; }
+        .bot_blocked { background: #fee2e2; color: #7f1d1d; }
         .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+        .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
         .note { background: #fffbeb; border: 1px solid #fde68a; }
         code { background: #f3f4f6; padding: 2px 5px; border-radius: 6px; }
         footer { color: #6b7280; padding: 20px 0 40px; }
-        @media (max-width: 900px) { .grid, .two { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) { .grid, .two, .three { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
     <header>
         <h1>🛒 Black Friday Simulator</h1>
-        <p>Sistema concurrente de compras, stock y pagos en Python</p>
+        <p>Sistema concurrente de compras, stock, clientes VIP, bots y pagos en Python</p>
     </header>
     <main>
         <section class="grid">
-            <div class="card"><div class="label">Pedidos aceptados</div><div class="metric">763</div></div>
-            <div class="card"><div class="label">Pedidos rechazados</div><div class="metric">402</div></div>
-            <div class="card"><div class="label">Facturación</div><div class="metric">488.613,78 €</div></div>
-            <div class="card"><div class="label">Aceleración</div><div class="metric">x5.26</div></div>
+            <div class="card"><div class="label">Pedidos aceptados</div><div class="metric">759</div></div>
+            <div class="card"><div class="label">Rechazados por stock</div><div class="metric">363</div></div>
+            <div class="card"><div class="label">Bots bloqueados</div><div class="metric">51</div></div>
+            <div class="card"><div class="label">Aceleración</div><div class="metric">x5.29</div></div>
+        </section>
+
+        <section class="grid">
+            <div class="card"><div class="label">Facturación</div><div class="metric">483.204,09 €</div></div>
+            <div class="card"><div class="label">Clientes normales</div><div class="metric">978</div></div>
+            <div class="card"><div class="label">Clientes VIP</div><div class="metric">166</div></div>
+            <div class="card"><div class="label">Bots/reventa</div><div class="metric">56</div></div>
         </section>
 
         <section class="two">
             <div class="card">
                 <h2>Resumen de pedidos</h2>
                 
-    <svg viewBox="0 0 620 310" role="img" aria-label="Resumen de pedidos">
+    <svg viewBox="0 0 660 310" role="img" aria-label="Resumen de pedidos">
         <style>
             text { font-family: Arial, sans-serif; fill: #111827; }
             .big { font-size: 28px; font-weight: 700; }
             .small { font-size: 14px; fill: #4b5563; }
         </style>
-        <circle r="90" cx="150" cy="150" fill="transparent" stroke="#111827" stroke-width="32" stroke-dasharray="359.56 205.93" stroke-dashoffset="0.00" transform="rotate(-90 150 150)" /><circle r="90" cx="150" cy="150" fill="transparent" stroke="#6b7280" stroke-width="32" stroke-dasharray="189.44 376.05" stroke-dashoffset="-359.56" transform="rotate(-90 150 150)" /><circle r="90" cx="150" cy="150" fill="transparent" stroke="#d1d5db" stroke-width="32" stroke-dasharray="16.49 548.99" stroke-dashoffset="-548.99" transform="rotate(-90 150 150)" />
+        <circle r="90" cx="150" cy="150" fill="transparent" stroke="#111827" stroke-width="32" stroke-dasharray="357.67 207.82" stroke-dashoffset="0.00" transform="rotate(-90 150 150)" /><circle r="90" cx="150" cy="150" fill="transparent" stroke="#6b7280" stroke-width="32" stroke-dasharray="171.06 394.43" stroke-dashoffset="-357.67" transform="rotate(-90 150 150)" /><circle r="90" cx="150" cy="150" fill="transparent" stroke="#d1d5db" stroke-width="32" stroke-dasharray="12.72 552.76" stroke-dashoffset="-528.73" transform="rotate(-90 150 150)" /><circle r="90" cx="150" cy="150" fill="transparent" stroke="#ef4444" stroke-width="32" stroke-dasharray="24.03 541.45" stroke-dashoffset="-541.45" transform="rotate(-90 150 150)" />
         <text x="150" y="143" text-anchor="middle" class="big">1200</text>
         <text x="150" y="166" text-anchor="middle" class="small">pedidos</text>
-        <rect x="300" y="64" width="18" height="18" rx="4" fill="#111827" /><text x="330" y="80" font-size="16">Aceptados: 763 (63.6%)</text><rect x="300" y="100" width="18" height="18" rx="4" fill="#6b7280" /><text x="330" y="116" font-size="16">Sin stock: 402 (33.5%)</text><rect x="300" y="136" width="18" height="18" rx="4" fill="#d1d5db" /><text x="330" y="152" font-size="16">Pago fallido: 35 (2.9%)</text>
+        <rect x="300" y="46" width="18" height="18" rx="4" fill="#111827" /><text x="330" y="62" font-size="16">Aceptados: 759 (63.2%)</text><rect x="300" y="82" width="18" height="18" rx="4" fill="#6b7280" /><text x="330" y="98" font-size="16">Sin stock: 363 (30.2%)</text><rect x="300" y="118" width="18" height="18" rx="4" fill="#d1d5db" /><text x="330" y="134" font-size="16">Pago fallido: 27 (2.2%)</text><rect x="300" y="154" width="18" height="18" rx="4" fill="#ef4444" /><text x="330" y="170" font-size="16">Bots bloqueados: 51 (4.2%)</text>
     </svg>
     
             </div>
@@ -78,13 +87,158 @@
                 <h2>Rendimiento</h2>
                 <table>
                     <tr><th>Versión</th><th>Tiempo</th><th>Pedidos</th></tr>
-                    <tr><td>Secuencial</td><td>16.298 s</td><td>1200</td></tr>
-                    <tr><td>Concurrente</td><td>3.101 s</td><td>1200</td></tr>
+                    <tr><td>Secuencial</td><td>16.358 s</td><td>1200</td></tr>
+                    <tr><td>Concurrente</td><td>3.092 s</td><td>1200</td></tr>
                 </table>
-                <p>Tiempo medio de espera en cola: <strong>0.9363 s</strong></p>
-                <p>Tiempo máximo de espera en cola: <strong>1.3370 s</strong></p>
-                <p>Tiempo medio de procesamiento: <strong>0.0290 s</strong></p>
+                <p>Tiempo medio de espera en cola: <strong>0.9638 s</strong></p>
+                <p>Tiempo máximo de espera en cola: <strong>2.8503 s</strong></p>
+                <p>Tiempo medio de procesamiento: <strong>0.0291 s</strong></p>
             </div>
+        </section>
+
+        <section class="two">
+            <div class="card">
+                <h2>Tipos de cliente</h2>
+                
+    <svg viewBox="0 0 920 236" role="img" aria-label="Pedidos procesados por tipo de cliente">
+        <style>
+            svg { max-width: 100%; height: auto; }
+            rect { fill: #111827; opacity: 0.88; }
+            text { font-family: Arial, sans-serif; fill: #111827; }
+            .title { font-size: 22px; font-weight: 700; }
+        </style>
+        <text x="20" y="36" class="title">Pedidos procesados por tipo de cliente</text>
+        
+            <text x="20" y="94" font-size="15">👤 Normal</text>
+            <rect x="240" y="70" width="600.00" height="26" rx="8"></rect>
+            <text x="850.0" y="89" font-size="14">978</text>
+            
+            <text x="20" y="136" font-size="15">⭐ VIP</text>
+            <rect x="240" y="112" width="101.84" height="26" rx="8"></rect>
+            <text x="351.840490797546" y="131" font-size="14">166</text>
+            
+            <text x="20" y="178" font-size="15">🤖 Bot/reventa</text>
+            <rect x="240" y="154" width="34.36" height="26" rx="8"></rect>
+            <text x="284.3558282208589" y="173" font-size="14">56</text>
+            
+    </svg>
+    
+            </div>
+            <div class="card">
+                <h2>Pedidos aceptados por tipo</h2>
+                <table>
+                    <tr><th>Tipo de cliente</th><th>Procesados</th><th>Aceptados</th></tr>
+                    
+        <tr>
+            <td>👤 Cliente normal</td>
+            <td>978</td>
+            <td>606</td>
+        </tr>
+        
+        <tr>
+            <td>⭐ Cliente VIP</td>
+            <td>166</td>
+            <td>150</td>
+        </tr>
+        
+        <tr>
+            <td>🤖 Bot/reventa</td>
+            <td>56</td>
+            <td>3</td>
+        </tr>
+        
+                </table>
+                <p>Los clientes VIP entran con mayor prioridad en la <code>PriorityQueue</code>. Los bots se analizan antes de consumir stock.</p>
+            </div>
+        </section>
+
+        <section class="three">
+            <div class="card">
+                <h2>🏆 Producto más vendido</h2>
+                <p class="metric">🎧 AirPods Pro</p>
+                <p>240 unidades vendidas</p>
+            </div>
+            <div class="card">
+                <h2>💰 Producto más rentable</h2>
+                <p class="metric">📱 iPhone 16</p>
+                <p>86.310,00 € generados</p>
+            </div>
+            <div class="card">
+                <h2>🚨 Productos agotados</h2>
+                <ul><li>🎮 PlayStation 5</li><li>📱 iPhone 16</li><li>🎧 AirPods Pro</li><li>🕹️ Nintendo Switch</li><li>💻 MacBook Air</li><li>📺 Smart TV 55</li></ul>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Ranking de productos más vendidos</h2>
+            
+    <svg viewBox="0 0 920 320" role="img" aria-label="Top 5 por unidades vendidas">
+        <style>
+            svg { max-width: 100%; height: auto; }
+            rect { fill: #111827; opacity: 0.88; }
+            text { font-family: Arial, sans-serif; fill: #111827; }
+            .title { font-size: 22px; font-weight: 700; }
+        </style>
+        <text x="20" y="36" class="title">Top 5 por unidades vendidas</text>
+        
+            <text x="20" y="94" font-size="15">🎧 AirPods Pro</text>
+            <rect x="240" y="70" width="600.00" height="26" rx="8"></rect>
+            <text x="850.0" y="89" font-size="14">240</text>
+            
+            <text x="20" y="136" font-size="15">🕹️ Nintendo Switch</text>
+            <rect x="240" y="112" width="450.00" height="26" rx="8"></rect>
+            <text x="700.0" y="131" font-size="14">180</text>
+            
+            <text x="20" y="178" font-size="15">🎮 PlayStation 5</text>
+            <rect x="240" y="154" width="350.00" height="26" rx="8"></rect>
+            <text x="600.0" y="173" font-size="14">140</text>
+            
+            <text x="20" y="220" font-size="15">📺 Smart TV 55</text>
+            <rect x="240" y="196" width="275.00" height="26" rx="8"></rect>
+            <text x="525.0" y="215" font-size="14">110</text>
+            
+            <text x="20" y="262" font-size="15">📚 Kindle</text>
+            <rect x="240" y="238" width="272.50" height="26" rx="8"></rect>
+            <text x="522.5" y="257" font-size="14">109</text>
+            
+    </svg>
+    
+        </section>
+
+        <section class="card">
+            <h2>Ranking de productos más rentables</h2>
+            
+    <svg viewBox="0 0 920 320" role="img" aria-label="Top 5 por facturación aproximada">
+        <style>
+            svg { max-width: 100%; height: auto; }
+            rect { fill: #111827; opacity: 0.88; }
+            text { font-family: Arial, sans-serif; fill: #111827; }
+            .title { font-size: 22px; font-weight: 700; }
+        </style>
+        <text x="20" y="36" class="title">Top 5 por facturación aproximada</text>
+        
+            <text x="20" y="94" font-size="15">📱 iPhone 16</text>
+            <rect x="240" y="70" width="600.00" height="26" rx="8"></rect>
+            <text x="850.0" y="89" font-size="14">86310 €</text>
+            
+            <text x="20" y="136" font-size="15">💻 MacBook Air</text>
+            <rect x="240" y="112" width="583.45" height="26" rx="8"></rect>
+            <text x="833.4549878345499" y="131" font-size="14">83930 €</text>
+            
+            <text x="20" y="178" font-size="15">📺 Smart TV 55</text>
+            <rect x="240" y="154" width="496.28" height="26" rx="8"></rect>
+            <text x="746.2808481056657" y="173" font-size="14">71390 €</text>
+            
+            <text x="20" y="220" font-size="15">🎮 PlayStation 5</text>
+            <rect x="240" y="196" width="486.61" height="26" rx="8"></rect>
+            <text x="736.6082725060828" y="215" font-size="14">69999 €</text>
+            
+            <text x="20" y="262" font-size="15">🎧 AirPods Pro</text>
+            <rect x="240" y="238" width="415.43" height="26" rx="8"></rect>
+            <text x="665.4327424400417" y="257" font-size="14">59760 €</text>
+            
+    </svg>
+    
         </section>
 
         <section class="card">
@@ -100,40 +254,40 @@
         <text x="20" y="36" class="title">Unidades vendidas por producto</text>
         
             <text x="20" y="94" font-size="15">🎮 PlayStation 5</text>
-            <rect x="220" y="70" width="385.00" height="26" rx="8"></rect>
-            <text x="615.0" y="89" font-size="14">140</text>
+            <rect x="240" y="70" width="350.00" height="26" rx="8"></rect>
+            <text x="600.0" y="89" font-size="14">140</text>
             
             <text x="20" y="136" font-size="15">📱 iPhone 16</text>
-            <rect x="220" y="112" width="247.50" height="26" rx="8"></rect>
-            <text x="477.5" y="131" font-size="14">90</text>
+            <rect x="240" y="112" width="225.00" height="26" rx="8"></rect>
+            <text x="475.0" y="131" font-size="14">90</text>
             
             <text x="20" y="178" font-size="15">🎧 AirPods Pro</text>
-            <rect x="220" y="154" width="660.00" height="26" rx="8"></rect>
-            <text x="890.0" y="173" font-size="14">240</text>
+            <rect x="240" y="154" width="600.00" height="26" rx="8"></rect>
+            <text x="850.0" y="173" font-size="14">240</text>
             
             <text x="20" y="220" font-size="15">🕹️ Nintendo Switch</text>
-            <rect x="220" y="196" width="495.00" height="26" rx="8"></rect>
-            <text x="725.0" y="215" font-size="14">180</text>
+            <rect x="240" y="196" width="450.00" height="26" rx="8"></rect>
+            <text x="700.0" y="215" font-size="14">180</text>
             
             <text x="20" y="262" font-size="15">💻 MacBook Air</text>
-            <rect x="220" y="238" width="192.50" height="26" rx="8"></rect>
-            <text x="422.5" y="257" font-size="14">70</text>
+            <rect x="240" y="238" width="175.00" height="26" rx="8"></rect>
+            <text x="425.0" y="257" font-size="14">70</text>
             
             <text x="20" y="304" font-size="15">📺 Smart TV 55</text>
-            <rect x="220" y="280" width="302.50" height="26" rx="8"></rect>
-            <text x="532.5" y="299" font-size="14">110</text>
+            <rect x="240" y="280" width="275.00" height="26" rx="8"></rect>
+            <text x="525.0" y="299" font-size="14">110</text>
             
             <text x="20" y="346" font-size="15">📚 Kindle</text>
-            <rect x="220" y="322" width="346.50" height="26" rx="8"></rect>
-            <text x="576.5" y="341" font-size="14">126</text>
+            <rect x="240" y="322" width="272.50" height="26" rx="8"></rect>
+            <text x="522.5" y="341" font-size="14">109</text>
             
             <text x="20" y="388" font-size="15">🤖 Robot Aspirador</text>
-            <rect x="220" y="364" width="299.75" height="26" rx="8"></rect>
-            <text x="529.75" y="383" font-size="14">109</text>
+            <rect x="240" y="364" width="257.50" height="26" rx="8"></rect>
+            <text x="507.5" y="383" font-size="14">103</text>
             
             <text x="20" y="430" font-size="15">☕ Cafetera Deluxe</text>
-            <rect x="220" y="406" width="184.25" height="26" rx="8"></rect>
-            <text x="414.25" y="425" font-size="14">67</text>
+            <rect x="240" y="406" width="147.50" height="26" rx="8"></rect>
+            <text x="397.5" y="425" font-size="14">59</text>
             
     </svg>
     
@@ -152,40 +306,40 @@
         <text x="20" y="36" class="title">Stock final por producto</text>
         
             <text x="20" y="94" font-size="15">🎮 PlayStation 5</text>
-            <rect x="220" y="70" width="0.00" height="26" rx="8"></rect>
-            <text x="230.0" y="89" font-size="14">0</text>
+            <rect x="240" y="70" width="0.00" height="26" rx="8"></rect>
+            <text x="250.0" y="89" font-size="14">0</text>
             
             <text x="20" y="136" font-size="15">📱 iPhone 16</text>
-            <rect x="220" y="112" width="0.00" height="26" rx="8"></rect>
-            <text x="230.0" y="131" font-size="14">0</text>
+            <rect x="240" y="112" width="0.00" height="26" rx="8"></rect>
+            <text x="250.0" y="131" font-size="14">0</text>
             
             <text x="20" y="178" font-size="15">🎧 AirPods Pro</text>
-            <rect x="220" y="154" width="0.00" height="26" rx="8"></rect>
-            <text x="230.0" y="173" font-size="14">0</text>
+            <rect x="240" y="154" width="0.00" height="26" rx="8"></rect>
+            <text x="250.0" y="173" font-size="14">0</text>
             
             <text x="20" y="220" font-size="15">🕹️ Nintendo Switch</text>
-            <rect x="220" y="196" width="0.00" height="26" rx="8"></rect>
-            <text x="230.0" y="215" font-size="14">0</text>
+            <rect x="240" y="196" width="0.00" height="26" rx="8"></rect>
+            <text x="250.0" y="215" font-size="14">0</text>
             
             <text x="20" y="262" font-size="15">💻 MacBook Air</text>
-            <rect x="220" y="238" width="0.00" height="26" rx="8"></rect>
-            <text x="230.0" y="257" font-size="14">0</text>
+            <rect x="240" y="238" width="0.00" height="26" rx="8"></rect>
+            <text x="250.0" y="257" font-size="14">0</text>
             
             <text x="20" y="304" font-size="15">📺 Smart TV 55</text>
-            <rect x="220" y="280" width="0.00" height="26" rx="8"></rect>
-            <text x="230.0" y="299" font-size="14">0</text>
+            <rect x="240" y="280" width="0.00" height="26" rx="8"></rect>
+            <text x="250.0" y="299" font-size="14">0</text>
             
             <text x="20" y="346" font-size="15">📚 Kindle</text>
-            <rect x="220" y="322" width="660.00" height="26" rx="8"></rect>
-            <text x="890.0" y="341" font-size="14">94</text>
+            <rect x="240" y="322" width="600.00" height="26" rx="8"></rect>
+            <text x="850.0" y="341" font-size="14">111</text>
             
             <text x="20" y="388" font-size="15">🤖 Robot Aspirador</text>
-            <rect x="220" y="364" width="287.87" height="26" rx="8"></rect>
-            <text x="517.872340425532" y="383" font-size="14">41</text>
+            <rect x="240" y="364" width="254.05" height="26" rx="8"></rect>
+            <text x="504.05405405405406" y="383" font-size="14">47</text>
             
             <text x="20" y="430" font-size="15">☕ Cafetera Deluxe</text>
-            <rect x="220" y="406" width="652.98" height="26" rx="8"></rect>
-            <text x="882.9787234042553" y="425" font-size="14">93</text>
+            <rect x="240" y="406" width="545.95" height="26" rx="8"></rect>
+            <text x="795.9459459459459" y="425" font-size="14">101</text>
             
     </svg>
     
@@ -200,7 +354,7 @@
         <section class="card">
             <h2>Catálogo final</h2>
             <table>
-                <tr><th>Producto</th><th>Precio</th><th>Stock inicial</th><th>Vendido</th><th>Stock final</th></tr>
+                <tr><th>Producto</th><th>Precio</th><th>Stock inicial</th><th>Vendido</th><th>Stock final</th><th>Facturación aprox.</th></tr>
                 
         <tr>
             <td>🎮 PlayStation 5</td>
@@ -208,6 +362,7 @@
             <td>140</td>
             <td>140</td>
             <td>0</td>
+            <td>69.998,60 €</td>
         </tr>
         
         <tr>
@@ -216,6 +371,7 @@
             <td>90</td>
             <td>90</td>
             <td>0</td>
+            <td>86.310,00 €</td>
         </tr>
         
         <tr>
@@ -224,6 +380,7 @@
             <td>240</td>
             <td>240</td>
             <td>0</td>
+            <td>59.760,00 €</td>
         </tr>
         
         <tr>
@@ -232,6 +389,7 @@
             <td>180</td>
             <td>180</td>
             <td>0</td>
+            <td>57.598,20 €</td>
         </tr>
         
         <tr>
@@ -240,6 +398,7 @@
             <td>70</td>
             <td>70</td>
             <td>0</td>
+            <td>83.930,00 €</td>
         </tr>
         
         <tr>
@@ -248,30 +407,34 @@
             <td>110</td>
             <td>110</td>
             <td>0</td>
+            <td>71.390,00 €</td>
         </tr>
         
         <tr>
             <td>📚 Kindle</td>
             <td>129,99 €</td>
             <td>220</td>
-            <td>126</td>
-            <td>94</td>
+            <td>109</td>
+            <td>111</td>
+            <td>14.168,91 €</td>
         </tr>
         
         <tr>
             <td>🤖 Robot Aspirador</td>
             <td>279,99 €</td>
             <td>150</td>
-            <td>109</td>
-            <td>41</td>
+            <td>103</td>
+            <td>47</td>
+            <td>28.838,97 €</td>
         </tr>
         
         <tr>
             <td>☕ Cafetera Deluxe</td>
             <td>189,99 €</td>
             <td>160</td>
-            <td>67</td>
-            <td>93</td>
+            <td>59</td>
+            <td>101</td>
+            <td>11.209,41 €</td>
         </tr>
         
             </table>
@@ -280,217 +443,161 @@
         <section class="card">
             <h2>Primeros pedidos procesados</h2>
             <table>
-                <tr><th>ID</th><th>Producto</th><th>Cantidad</th><th>Estado</th><th>Importe</th><th>Servidor</th></tr>
+                <tr><th>ID</th><th>Cliente</th><th>Producto</th><th>Cantidad</th><th>Estado</th><th>Importe</th><th>Servidor</th></tr>
                 
         <tr>
             <td>2</td>
-            <td>AirPods Pro</td>
+            <td>⭐ VIP</td>
+            <td>Nintendo Switch</td>
             <td>1</td>
             <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>249,00 €</td>
+            <td>319,99 €</td>
             <td>Servidor-1</td>
         </tr>
         
         <tr>
-            <td>4</td>
-            <td>AirPods Pro</td>
+            <td>6</td>
+            <td>👤 NORMAL</td>
+            <td>MacBook Air</td>
             <td>1</td>
             <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>249,00 €</td>
-            <td>Servidor-2</td>
-        </tr>
-        
-        <tr>
-            <td>6</td>
-            <td>PlayStation 5</td>
-            <td>2</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>999,98 €</td>
+            <td>1.199,00 €</td>
             <td>Servidor-3</td>
         </tr>
         
         <tr>
+            <td>4</td>
+            <td>👤 NORMAL</td>
+            <td>PlayStation 5</td>
+            <td>1</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>499,99 €</td>
+            <td>Servidor-2</td>
+        </tr>
+        
+        <tr>
             <td>11</td>
-            <td>Nintendo Switch</td>
+            <td>👤 NORMAL</td>
+            <td>MacBook Air</td>
             <td>2</td>
             <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>639,98 €</td>
-            <td>Servidor-9</td>
-        </tr>
-        
-        <tr>
-            <td>1</td>
-            <td>iPhone 16</td>
-            <td>1</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>959,00 €</td>
-            <td>Servidor-4</td>
-        </tr>
-        
-        <tr>
-            <td>3</td>
-            <td>PlayStation 5</td>
-            <td>1</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>499,99 €</td>
-            <td>Servidor-5</td>
-        </tr>
-        
-        <tr>
-            <td>12</td>
-            <td>PlayStation 5</td>
-            <td>1</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>499,99 €</td>
-            <td>Servidor-10</td>
-        </tr>
-        
-        <tr>
-            <td>8</td>
-            <td>PlayStation 5</td>
-            <td>2</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>999,98 €</td>
-            <td>Servidor-6</td>
-        </tr>
-        
-        <tr>
-            <td>10</td>
-            <td>Robot Aspirador</td>
-            <td>1</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>279,99 €</td>
+            <td>2.398,00 €</td>
             <td>Servidor-8</td>
         </tr>
         
         <tr>
-            <td>17</td>
+            <td>1</td>
+            <td>👤 NORMAL</td>
             <td>PlayStation 5</td>
             <td>1</td>
             <td><span class="badge accepted">ACCEPTED</span></td>
             <td>499,99 €</td>
+            <td>Servidor-4</td>
+        </tr>
+        
+        <tr>
+            <td>8</td>
+            <td>⭐ VIP</td>
+            <td>Kindle</td>
+            <td>1</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>129,99 €</td>
+            <td>Servidor-7</td>
+        </tr>
+        
+        <tr>
+            <td>3</td>
+            <td>⭐ VIP</td>
+            <td>Nintendo Switch</td>
+            <td>2</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>639,98 €</td>
+            <td>Servidor-5</td>
+        </tr>
+        
+        <tr>
+            <td>17</td>
+            <td>👤 NORMAL</td>
+            <td>Kindle</td>
+            <td>2</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>259,98 €</td>
             <td>Servidor-11</td>
         </tr>
         
         <tr>
             <td>5</td>
-            <td>Robot Aspirador</td>
-            <td>1</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>279,99 €</td>
-            <td>Servidor-7</td>
-        </tr>
-        
-        <tr>
-            <td>14</td>
-            <td>iPhone 16</td>
-            <td>1</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>959,00 €</td>
-            <td>Servidor-12</td>
-        </tr>
-        
-        <tr>
-            <td>23</td>
-            <td>AirPods Pro</td>
-            <td>1</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>249,00 €</td>
-            <td>Servidor-2</td>
-        </tr>
-        
-        <tr>
-            <td>7</td>
-            <td>AirPods Pro</td>
-            <td>1</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>249,00 €</td>
-            <td>Servidor-1</td>
-        </tr>
-        
-        <tr>
-            <td>16</td>
-            <td>Nintendo Switch</td>
-            <td>1</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>319,99 €</td>
-            <td>Servidor-3</td>
-        </tr>
-        
-        <tr>
-            <td>13</td>
+            <td>👤 NORMAL</td>
             <td>PlayStation 5</td>
             <td>1</td>
             <td><span class="badge accepted">ACCEPTED</span></td>
             <td>499,99 €</td>
-            <td>Servidor-5</td>
-        </tr>
-        
-        <tr>
-            <td>15</td>
-            <td>Nintendo Switch</td>
-            <td>2</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>639,98 €</td>
-            <td>Servidor-10</td>
-        </tr>
-        
-        <tr>
-            <td>18</td>
-            <td>AirPods Pro</td>
-            <td>1</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>249,00 €</td>
-            <td>Servidor-9</td>
-        </tr>
-        
-        <tr>
-            <td>19</td>
-            <td>Nintendo Switch</td>
-            <td>1</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>319,99 €</td>
             <td>Servidor-6</td>
         </tr>
         
         <tr>
-            <td>9</td>
-            <td>PlayStation 5</td>
+            <td>10</td>
+            <td>👤 NORMAL</td>
+            <td>MacBook Air</td>
             <td>1</td>
             <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>499,99 €</td>
-            <td>Servidor-4</td>
+            <td>1.199,00 €</td>
+            <td>Servidor-9</td>
         </tr>
         
         <tr>
-            <td>21</td>
-            <td>Smart TV 55</td>
+            <td>12</td>
+            <td>⭐ VIP</td>
+            <td>MacBook Air</td>
+            <td>1</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>1.199,00 €</td>
+            <td>Servidor-10</td>
+        </tr>
+        
+        <tr>
+            <td>14</td>
+            <td>👤 NORMAL</td>
+            <td>AirPods Pro</td>
             <td>2</td>
             <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>1.298,00 €</td>
-            <td>Servidor-7</td>
+            <td>498,00 €</td>
+            <td>Servidor-12</td>
+        </tr>
+        
+        <tr>
+            <td>16</td>
+            <td>👤 NORMAL</td>
+            <td>iPhone 16</td>
+            <td>2</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>1.918,00 €</td>
+            <td>Servidor-1</td>
+        </tr>
+        
+        <tr>
+            <td>7</td>
+            <td>👤 NORMAL</td>
+            <td>AirPods Pro</td>
+            <td>1</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>249,00 €</td>
+            <td>Servidor-3</td>
         </tr>
         
         <tr>
             <td>29</td>
+            <td>⭐ VIP</td>
             <td>PlayStation 5</td>
-            <td>2</td>
+            <td>1</td>
             <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>999,98 €</td>
-            <td>Servidor-11</td>
-        </tr>
-        
-        <tr>
-            <td>20</td>
-            <td>Nintendo Switch</td>
-            <td>2</td>
-            <td><span class="badge accepted">ACCEPTED</span></td>
-            <td>639,98 €</td>
+            <td>499,99 €</td>
             <td>Servidor-8</td>
         </tr>
         
         <tr>
-            <td>25</td>
+            <td>9</td>
+            <td>👤 NORMAL</td>
             <td>PlayStation 5</td>
             <td>2</td>
             <td><span class="badge accepted">ACCEPTED</span></td>
@@ -499,12 +606,93 @@
         </tr>
         
         <tr>
-            <td>22</td>
+            <td>13</td>
+            <td>👤 NORMAL</td>
             <td>Nintendo Switch</td>
             <td>2</td>
             <td><span class="badge accepted">ACCEPTED</span></td>
             <td>639,98 €</td>
+            <td>Servidor-7</td>
+        </tr>
+        
+        <tr>
+            <td>24</td>
+            <td>⭐ VIP</td>
+            <td>PlayStation 5</td>
+            <td>1</td>
+            <td><span class="badge payment_error">PAYMENT_ERROR</span></td>
+            <td>0,00 €</td>
+            <td>Servidor-4</td>
+        </tr>
+        
+        <tr>
+            <td>15</td>
+            <td>👤 NORMAL</td>
+            <td>iPhone 16</td>
+            <td>1</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>959,00 €</td>
+            <td>Servidor-5</td>
+        </tr>
+        
+        <tr>
+            <td>38</td>
+            <td>⭐ VIP</td>
+            <td>AirPods Pro</td>
+            <td>1</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>249,00 €</td>
+            <td>Servidor-10</td>
+        </tr>
+        
+        <tr>
+            <td>19</td>
+            <td>👤 NORMAL</td>
+            <td>PlayStation 5</td>
+            <td>2</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>999,98 €</td>
             <td>Servidor-12</td>
+        </tr>
+        
+        <tr>
+            <td>28</td>
+            <td>⭐ VIP</td>
+            <td>AirPods Pro</td>
+            <td>2</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>498,00 €</td>
+            <td>Servidor-11</td>
+        </tr>
+        
+        <tr>
+            <td>18</td>
+            <td>👤 NORMAL</td>
+            <td>Cafetera Deluxe</td>
+            <td>1</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>189,99 €</td>
+            <td>Servidor-9</td>
+        </tr>
+        
+        <tr>
+            <td>30</td>
+            <td>⭐ VIP</td>
+            <td>iPhone 16</td>
+            <td>1</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>959,00 €</td>
+            <td>Servidor-6</td>
+        </tr>
+        
+        <tr>
+            <td>46</td>
+            <td>⭐ VIP</td>
+            <td>iPhone 16</td>
+            <td>1</td>
+            <td><span class="badge accepted">ACCEPTED</span></td>
+            <td>959,00 €</td>
+            <td>Servidor-1</td>
         </tr>
         
             </table>
@@ -524,7 +712,7 @@
         </section>
 
         <footer>
-            Informe generado automáticamente el 28/04/2026 21:21:30.
+            Informe generado automáticamente el 29/04/2026 16:56:43.
         </footer>
     </main>
 </body>
