@@ -258,9 +258,9 @@ def progress_bar(value: int, total: int, width: int = 28) -> str:
 def shop_banner() -> str:
     return r"""
 ╔════════════════════════════════════════════════════════════╗
-║                  CLICK&RUN BLACK FRIDAY                   ║
+║              TIENDA ONLINE EN BLACK FRIDAY                 ║
 ║                                                            ║
-║       🛒  clientes masivos  →  cola  →  servidores  ⚙️      ║
+║         clientes masivos  →  cola  →  servidores           ║
 ║        VIP + bots + stock limitado + pagos simultáneos     ║
 ╚════════════════════════════════════════════════════════════╝
 """
