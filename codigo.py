@@ -1059,7 +1059,7 @@ def generate_report(
 </head>
 <body>
     <header>
-        <h1>🛒 Black Friday Simulator</h1>
+        <h1> Black Friday Simulator</h1>
         <p>Sistema concurrente de compras, stock, clientes VIP, bots y pagos en Python</p>
     </header>
     <main>
