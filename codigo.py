@@ -89,12 +89,7 @@ class Product:
             self.sold = 0
 
     def try_buy_safe(self, quantity: int) -> bool:
-        """
-        Intenta comprar un producto protegiendo el stock con Lock.
-
-        Esta parte es clave: si varias hebras intentan comprar el mismo
-        producto a la vez, el Lock evita que se venda más stock del existente.
-        """
+        
         with self.lock:
             if self.stock >= quantity:
                 # Pequeña pausa artificial para hacer visible el problema de concurrencia.
